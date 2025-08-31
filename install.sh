@@ -49,6 +49,14 @@ if [ $? -eq 0 ]; then
     # Copy the executable
     cp .build/release/TypoZap "$APP_BUNDLE/Contents/MacOS/"
     
+    # Copy the custom icon
+    if [ -f "TypoZap.icns" ]; then
+        cp TypoZap.icns "$APP_BUNDLE/Contents/Resources/"
+        echo "✅ Custom icon copied to app bundle"
+    else
+        echo "⚠️  TypoZap.icns not found, using default icon"
+    fi
+    
     # Create Info.plist
     cat > "$APP_BUNDLE/Contents/Info.plist" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -59,6 +67,8 @@ if [ $? -eq 0 ]; then
     <string>en</string>
     <key>CFBundleExecutable</key>
     <string>TypoZap</string>
+    <key>CFBundleIconFile</key>
+    <string>TypoZap.icns</string>
     <key>CFBundleIdentifier</key>
     <string>com.typozap.app</string>
     <key>CFBundleInfoDictionaryVersion</key>

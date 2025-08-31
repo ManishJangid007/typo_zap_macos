@@ -18,6 +18,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     // MARK: - App Lifecycle
     func applicationDidFinishLaunching(_ notification: Notification) {
+        print("🚀 TypoZap launching...")
+        print("🔍 App bundle path: \(Bundle.main.bundlePath)")
+        print("🔍 App resource path: \(Bundle.main.resourcePath ?? "nil")")
+        
         // Initialize services
         geminiService = GeminiService()
         clipboardManager = ClipboardManager()
@@ -32,18 +36,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         // Setup menu bar
+        print("🎨 Setting up menu bar...")
         setupMenuBar()
         
         // Setup global hotkey
+        print("⌨️ Setting up global hotkey...")
         setupGlobalHotkey()
         
         // Check for accessibility permissions
+        print("🔐 Checking accessibility permissions...")
         checkAccessibilityPermissions()
         
         // Request API key if not set
         if !geminiService.hasValidAPIKey() {
+            print("🔑 Requesting API key...")
             requestAPIKey()
         }
+        
+        print("✅ TypoZap launch complete!")
     }
     
     func applicationWillTerminate(_ notification: Notification) {
@@ -56,10 +66,43 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Create status item in menu bar
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         
-        // Set icon (using a simple text icon for now)
+        // Set custom icon if available, otherwise fall back to emoji
         if let button = statusItem.button {
-            button.title = "🔤"
-            button.font = NSFont.systemFont(ofSize: 16)
+            // Debug bundle information
+            print("🔍 Bundle main path: \(Bundle.main.bundlePath)")
+            print("🔍 Bundle resource path: \(Bundle.main.resourcePath ?? "nil")")
+            
+            // Try multiple methods to load the custom icon
+            var iconLoaded = false
+            
+            // Method 1: Try NSImage(named:) first (Apple's recommended approach)
+            if let icon = NSImage(named: "TypoZap") {
+                print("✅ Successfully loaded icon using NSImage(named:)")
+                iconLoaded = true
+                configureIconForMenuBar(icon, button: button)
+            }
+            // Method 2: Try loading from file path
+            else if let iconPath = Bundle.main.path(forResource: "TypoZap", ofType: "icns") {
+                print("🔍 Found icon at: \(iconPath)")
+                if let icon = NSImage(contentsOfFile: iconPath) {
+                    print("✅ Successfully loaded custom icon from file")
+                    iconLoaded = true
+                    configureIconForMenuBar(icon, button: button)
+                } else {
+                    print("❌ Failed to load icon from path: \(iconPath)")
+                }
+            } else {
+                print("⚠️ Icon file not found in bundle")
+                // List all resources in bundle
+                if let resources = Bundle.main.urls(forResourcesWithExtension: nil, subdirectory: nil) {
+                    print("📁 Available resources: \(resources.map { $0.lastPathComponent })")
+                }
+            }
+            
+            // Fallback to emoji if no icon loaded
+            if !iconLoaded {
+                fallbackToEmojiIcon(button)
+            }
         }
         
         // Create menu
@@ -75,6 +118,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem.menu = menu
     }
     
+    private func fallbackToEmojiIcon(_ button: NSStatusBarButton) {
+        button.title = "🔤"
+        button.font = NSFont.systemFont(ofSize: 16)
+        button.image = nil
+    }
+    
+    private func configureIconForMenuBar(_ icon: NSImage, button: NSStatusBarButton) {
+        // Configure the icon properly for menu bar
+        icon.size = NSSize(width: 18, height: 18) // Standard menu bar icon size
+        icon.isTemplate = true // Makes it work better with system themes
+        
+        button.image = icon
+        button.imagePosition = .imageLeft
+        button.imageScaling = .scaleProportionallyDown
+        button.title = "" // Clear title when using image
+        
+        print("🎨 Icon configured with size: \(icon.size), template: \(icon.isTemplate)")
+    }
+    
     private func setupGlobalHotkey() {
         // Setup Option+T hotkey using HotKey library
         hotKey = HotKey(key: .t, modifiers: [.option])
@@ -87,28 +149,68 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func checkAccessibilityPermissions() {
-        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
-        let accessEnabled = AXIsProcessTrustedWithOptions(options as CFDictionary)
+        print("🔐 Checking accessibility permissions...")
+        print("🔍 App bundle identifier: \(Bundle.main.bundleIdentifier ?? "nil")")
+        print("🔍 App bundle path: \(Bundle.main.bundlePath)")
+        print("🔍 Process ID: \(ProcessInfo.processInfo.processIdentifier)")
         
-        if !accessEnabled {
+        // Check if we're running from Applications folder
+        let isFromApplications = Bundle.main.bundlePath.hasPrefix("/Applications/")
+        print("🔍 Running from Applications folder: \(isFromApplications)")
+        
+        // First check without prompting to see current status
+        let checkOptions = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false]
+        let currentStatus = AXIsProcessTrustedWithOptions(checkOptions as CFDictionary)
+        print("🔐 Current accessibility status: \(currentStatus)")
+        
+        if currentStatus {
+            print("✅ Accessibility permissions already granted")
+            return
+        }
+        
+        // Only prompt if permissions are not granted
+        print("⚠️ Accessibility permissions not granted, prompting user...")
+        let promptOptions = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true]
+        let promptResult = AXIsProcessTrustedWithOptions(promptOptions as CFDictionary)
+        print("🔐 Prompt result: \(promptResult)")
+        
+        if !promptResult {
             showAccessibilityAlert()
         }
     }
     
     // MARK: - Hotkey Handler
     private func handleHotkeyPressed() {
+        print("🔥 Hotkey pressed! Starting text correction process...")
+        
+        // Check accessibility permissions first
+        let options = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: false]
+        let accessEnabled = AXIsProcessTrustedWithOptions(options as CFDictionary)
+        print("🔐 Accessibility enabled: \(accessEnabled)")
+        
+        if !accessEnabled {
+            print("❌ Accessibility not enabled - text replacement will fail!")
+            showNotification(title: "Accessibility Required", body: "Please grant accessibility permissions in System Preferences > Security & Privacy > Privacy > Accessibility")
+            return
+        }
+        
         // Simulate Command+C to copy selected text
+        print("📋 Attempting to simulate Command+C...")
         let source = CGEventSource(stateID: .combinedSessionState)
         
         // Press Command+C
         let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 8, keyDown: true) // 8 = C key
         keyDown?.flags = .maskCommand
-        keyDown?.post(tap: .cghidEventTap)
+        let postResult = keyDown?.post(tap: .cghidEventTap)
+        print("📋 Command+C keyDown posted: \(postResult != nil)")
         
         // Release Command+C
         let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 8, keyDown: false)
         keyUp?.flags = .maskCommand
-        keyUp?.post(tap: .cghidEventTap)
+        let postResult2 = keyUp?.post(tap: .cghidEventTap)
+        print("📋 Command+C keyUp posted: \(postResult2 != nil)")
+        
+        print("📋 Command+C executed, waiting for clipboard...")
         
         // Wait a bit for the copy to complete, then process
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
@@ -117,27 +219,40 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func processSelectedText() {
-        guard let selectedText = NSPasteboard.general.string(forType: .string),
+        print("📝 Processing selected text...")
+        
+        // Check clipboard content
+        let clipboardContent = NSPasteboard.general.string(forType: .string)
+        print("📋 Clipboard content: '\(clipboardContent ?? "nil")'")
+        
+        guard let selectedText = clipboardContent,
               !selectedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            print("❌ No valid text found in clipboard")
             showNotification(title: "No Text Selected", body: "Please select some text to correct.")
             return
         }
         
+        print("✅ Valid text found: '\(selectedText)'")
+        
         // Store original clipboard content
         let originalClipboard = clipboardManager.getCurrentClipboard()
+        print("📋 Original clipboard stored: '\(originalClipboard)'")
         
         // Show processing indicator
         showProcessingIndicator()
         
         // Send to Gemini for correction
+        print("🤖 Sending text to Gemini for correction...")
         geminiService.correctGrammar(text: selectedText) { [weak self] result in
             DispatchQueue.main.async {
                 self?.hideProcessingIndicator()
                 
                 switch result {
                 case .success(let correctedText):
+                    print("✅ Gemini correction successful: '\(correctedText)'")
                     self?.applyCorrection(correctedText, originalClipboard: originalClipboard)
                 case .failure(let error):
+                    print("❌ Gemini correction failed: \(error)")
                     self?.showNotification(title: "Correction Failed", body: error.localizedDescription)
                 }
             }
@@ -145,54 +260,136 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     private func applyCorrection(_ correctedText: String, originalClipboard: String) {
+        print("📝 Applying correction: '\(correctedText)'")
+        
         // Copy corrected text to clipboard
         clipboardManager.setClipboard(text: correctedText)
+        print("📋 Corrected text copied to clipboard")
         
-        // Simulate Command+V to paste
-        let source = CGEventSource(stateID: .combinedSessionState)
+        // Verify clipboard was set
+        let verifyClipboard = NSPasteboard.general.string(forType: .string)
+        print("📋 Clipboard verification: '\(verifyClipboard ?? "nil")'")
         
-        // Press Command+V
-        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: true) // 9 = V key
-        keyDown?.flags = .maskCommand
-        keyDown?.post(tap: .cghidEventTap)
-        
-        // Release Command+V
-        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: false)
-        keyUp?.flags = .maskCommand
-        keyUp?.post(tap: .cghidEventTap)
-        
-        // Restore original clipboard after a delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
-            self?.clipboardManager.setClipboard(text: originalClipboard)
+        // Wait a bit longer for clipboard to be ready
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+            print("📋 Attempting to simulate Command+V...")
+            
+            // Simulate Command+V to paste
+            let source = CGEventSource(stateID: .combinedSessionState)
+            
+            // Press Command+V
+            let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: true) // 9 = V key
+            keyDown?.flags = .maskCommand
+            let postResult = keyDown?.post(tap: .cghidEventTap)
+            print("📋 Command+V keyDown posted: \(postResult != nil)")
+            
+            // Release Command+V
+            let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: false)
+            keyUp?.flags = .maskCommand
+            let postResult2 = keyUp?.post(tap: .cghidEventTap)
+            print("📋 Command+V keyUp posted: \(postResult2 != nil)")
+            
+            print("📋 Command+V executed")
+            
+            // Restore original clipboard after a longer delay to ensure paste completes
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.clipboardManager.setClipboard(text: originalClipboard)
+                print("📋 Original clipboard restored")
+            }
+            
+            // Show success feedback
+            self?.showSuccessFeedback()
         }
+    }
+    
+    // MARK: - Alternative Text Replacement Methods
+    private func tryAlternativeTextReplacement(_ correctedText: String, originalClipboard: String) {
+        print("🔄 Trying alternative text replacement method...")
         
-        // Show success feedback
-        showSuccessFeedback()
+        // Method 1: Try using NSPasteboard with a different approach
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(correctedText, forType: .string)
+        
+        // Try to trigger paste using a different event method
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Use a different event source
+            let source = CGEventSource(stateID: .hidSystemState)
+            let keyDown = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: true)
+            keyDown?.flags = .maskCommand
+            keyDown?.post(tap: .cghidEventTap)
+            
+            let keyUp = CGEvent(keyboardEventSource: source, virtualKey: 9, keyDown: false)
+            keyUp?.flags = .maskCommand
+            keyUp?.post(tap: .cghidEventTap)
+            
+            print("🔄 Alternative Command+V executed")
+            
+            // Restore clipboard
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                self.clipboardManager.setClipboard(text: originalClipboard)
+                self.showSuccessFeedback()
+            }
+        }
     }
     
     // MARK: - UI Feedback Methods
     private func showProcessingIndicator() {
         if let button = statusItem.button {
+            print("⏳ Showing processing indicator")
+            // Show processing indicator (emoji for now, could be custom icon later)
             button.title = "⏳"
+            button.image = nil
         }
     }
     
     private func hideProcessingIndicator() {
         if let button = statusItem.button {
-            button.title = "🔤"
+            print("🔄 Hiding processing indicator, restoring normal icon")
+            // Restore normal icon
+            restoreNormalIcon(button)
         }
     }
     
     private func showSuccessFeedback() {
         if let button = statusItem.button {
+            print("✅ Showing success feedback")
+            // Show success indicator
             button.title = "✅"
+            button.image = nil
             
             // Reset to normal icon after 1 second
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
                 if let button = self?.statusItem.button {
-                    button.title = "🔤"
+                    print("🔄 Restoring normal icon after success")
+                    self?.restoreNormalIcon(button)
                 }
             }
+        }
+    }
+    
+    private func restoreNormalIcon(_ button: NSStatusBarButton) {
+        // Try to restore custom icon with multiple methods
+        var iconRestored = false
+        
+        // Method 1: Try NSImage(named:) first
+        if let icon = NSImage(named: "TypoZap") {
+            print("🎨 Restoring custom icon using NSImage(named:)")
+            iconRestored = true
+            configureIconForMenuBar(icon, button: button)
+        }
+        // Method 2: Try loading from file path
+        else if let iconPath = Bundle.main.path(forResource: "TypoZap", ofType: "icns"),
+                let icon = NSImage(contentsOfFile: iconPath) {
+            print("🎨 Restoring custom icon from file")
+            iconRestored = true
+            configureIconForMenuBar(icon, button: button)
+        }
+        
+        if !iconRestored {
+            print("🔤 Falling back to emoji icon")
+            button.title = "🔤"
+            button.image = nil
         }
     }
     
