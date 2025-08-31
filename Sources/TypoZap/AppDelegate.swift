@@ -124,9 +124,35 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         button.image = nil
     }
     
+    private func loadIconFromBundle(_ iconName: String) -> NSImage? {
+        // Try to load icon from bundle resources
+        if let iconPath = Bundle.main.path(forResource: iconName, ofType: "icns") {
+            if let icon = NSImage(contentsOfFile: iconPath) {
+                // Configure the icon with different sizes based on type
+                switch iconName {
+                case "TypoZap":
+                    icon.size = NSSize(width: 22, height: 22) // Main icon: 20% larger
+                case "loader", "completed":
+                    icon.size = NSSize(width: 25, height: 25) // Status icons: 39% larger
+                default:
+                    icon.size = NSSize(width: 22, height: 22) // Default size
+                }
+                
+                icon.isTemplate = true // Makes it work better with system themes
+                print("✅ Successfully loaded \(iconName) icon with size: \(icon.size)")
+                return icon
+            } else {
+                print("❌ Failed to load \(iconName) icon from path: \(iconPath)")
+            }
+        } else {
+            print("⚠️ \(iconName).icns not found in bundle")
+        }
+        return nil
+    }
+    
     private func configureIconForMenuBar(_ icon: NSImage, button: NSStatusBarButton) {
         // Configure the icon properly for menu bar
-        icon.size = NSSize(width: 18, height: 18) // Standard menu bar icon size
+        icon.size = NSSize(width: 22, height: 22) // Increased by 20% from 18x18
         icon.isTemplate = true // Makes it work better with system themes
         
         button.image = icon
@@ -337,9 +363,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func showProcessingIndicator() {
         if let button = statusItem.button {
             print("⏳ Showing processing indicator")
-            // Show processing indicator (emoji for now, could be custom icon later)
-            button.title = "⏳"
-            button.image = nil
+            // Show custom loader icon
+            if let loaderIcon = loadIconFromBundle("loader") {
+                button.image = loaderIcon
+                button.title = ""
+                print("🎨 Loader icon displayed")
+            } else {
+                // Fallback to emoji if custom icon fails
+                button.title = "⏳"
+                button.image = nil
+                print("⚠️ Using emoji fallback for loader")
+            }
         }
     }
     
@@ -354,9 +388,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func showSuccessFeedback() {
         if let button = statusItem.button {
             print("✅ Showing success feedback")
-            // Show success indicator
-            button.title = "✅"
-            button.image = nil
+            // Show custom completed icon
+            if let completedIcon = loadIconFromBundle("completed") {
+                button.image = completedIcon
+                button.title = ""
+                print("🎨 Completed icon displayed")
+            } else {
+                // Fallback to emoji if custom icon fails
+                button.title = "✅"
+                button.image = nil
+                print("⚠️ Using emoji fallback for success")
+            }
             
             // Reset to normal icon after 1 second
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in

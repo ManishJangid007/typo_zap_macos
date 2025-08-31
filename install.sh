@@ -49,12 +49,26 @@ if [ $? -eq 0 ]; then
     # Copy the executable
     cp .build/release/TypoZap "$APP_BUNDLE/Contents/MacOS/"
     
-    # Copy the custom icon
+    # Copy the custom icons
     if [ -f "TypoZap.icns" ]; then
         cp TypoZap.icns "$APP_BUNDLE/Contents/Resources/"
-        echo "✅ Custom icon copied to app bundle"
+        echo "✅ Main icon copied to app bundle"
     else
         echo "⚠️  TypoZap.icns not found, using default icon"
+    fi
+    
+    if [ -f "loader.icns" ]; then
+        cp loader.icns "$APP_BUNDLE/Contents/Resources/"
+        echo "✅ Loader icon copied to app bundle"
+    else
+        echo "⚠️  loader.icns not found"
+    fi
+    
+    if [ -f "completed.icns" ]; then
+        cp completed.icns "$APP_BUNDLE/Contents/Resources/"
+        echo "✅ Completed icon copied to app bundle"
+    else
+        echo "⚠️  completed.icns not found"
     fi
     
     # Create Info.plist
