@@ -1,0 +1,32 @@
+{
+    "goal": "Create a macOS menu bar utility app that listens for a custom hotkey (Command+P), grabs the currently selected text, sends it to Gemini API for grammar correction, and replaces the selected text with the corrected version — all quickly and seamlessly.",
+    "steps": [
+        "Initialize a new Swift project using Swift Package Manager (SPM) or Xcode project structure inside this folder.",
+        "Create a minimal macOS menu bar app using AppKit. Use NSStatusBar to keep the app icon in the top toolbar.",
+        "Add a global hotkey listener for Command+P. Use NSEvent.addGlobalMonitorForEvents or a library like HotKey (https://github.com/soffes/HotKey).",
+        "When Command+P is pressed, simulate ⌘C to copy selected text into the clipboard, then read from NSPasteboard.general.string(forType: .string).",
+        "Send this string to the Gemini API for grammar correction. Refer to official Gemini documentation here: https://ai.google.dev/gemini-api/docs/quickstart",
+        "Ask the user for their Gemini API key once and store it securely (Keychain preferred).",
+        "After receiving Gemini response, replace the original text with corrected text by copying the response to clipboard and simulating ⌘V paste.",
+        "Restore the user’s original clipboard contents afterward to avoid interfering with clipboard history.",
+        "Handle edge cases where no text is selected (show a menu bar notification or bounce icon).",
+        "Add a simple right-click menu in the menu bar icon with options: Change Hotkey, Set API Key, Toggle Auto-Correct, Quit."
+    ],
+    "considerations": [
+        "Keep latency low — make Gemini API calls asynchronously on a background thread and paste response on main thread.",
+        "Restore clipboard state after paste so the user doesn’t lose previous clipboard contents.",
+        "Request macOS Accessibility permission to allow programmatic key presses (⌘C and ⌘V).",
+        "Some secure fields (like password boxes) will block programmatic paste — in that case just copy the corrected text to clipboard and notify user.",
+        "Provide small visual feedback (icon change, checkmark) to confirm correction was applied.",
+        "Keep Gemini API session alive if possible for faster subsequent calls."
+    ],
+    "extras": [
+        "Generate a README file explaining setup steps, permissions needed, and how to run the app.",
+        "Include clear instructions on how to get a Gemini API key and where to store it inside the app.",
+        "Use comments in Swift code to explain what each function is doing so a beginner can follow along."
+    ],
+    "ask_user": [
+        "Prompt the user for their Gemini API key when first running the project.",
+        "Offer a settings screen or menu item to update the key if needed."
+    ]
+}
