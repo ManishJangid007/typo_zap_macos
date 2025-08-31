@@ -553,6 +553,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         contentView.addSubview(input)
         
         // Create buttons
+        let pasteButton = NSButton(frame: NSRect(x: 20, y: 15, width: 80, height: 32))
+        pasteButton.title = "Paste Key"
+        pasteButton.bezelStyle = .rounded
+        pasteButton.font = NSFont.systemFont(ofSize: 13)
+        contentView.addSubview(pasteButton)
+        
         let saveButton = NSButton(frame: NSRect(x: 270, y: 15, width: 80, height: 32))
         saveButton.title = "Save"
         saveButton.bezelStyle = .rounded
@@ -568,6 +574,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         contentView.addSubview(cancelButton)
         
         // Set up button actions using closures for better control
+        pasteButton.target = self
+        pasteButton.action = #selector(pasteAPIKeyFromClipboard)
+        
         saveButton.target = self
         saveButton.action = #selector(saveAPIKeyFromDialog)
         
@@ -602,6 +611,30 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         self.currentAPIKeyInput = nil
         self.currentAPIKeyWindow = nil
         self.savedAPIKey = nil
+    }
+    
+    @objc private func pasteAPIKeyFromClipboard() {
+        guard let input = currentAPIKeyInput else {
+            return
+        }
+        
+        // Get the API key from clipboard
+        if let clipboardText = NSPasteboard.general.string(forType: .string) {
+            let trimmedText = clipboardText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !trimmedText.isEmpty {
+                input.stringValue = trimmedText
+                print("📋 API key pasted from clipboard: \(String(trimmedText.prefix(10)))...")
+                
+                // Show a brief success message
+                showNotification(title: "Key Pasted", body: "API key has been pasted from clipboard")
+            } else {
+                print("⚠️ Clipboard is empty or contains only whitespace")
+                showNotification(title: "Clipboard Empty", body: "No valid text found in clipboard")
+            }
+        } else {
+            print("❌ No text found in clipboard")
+            showNotification(title: "No Text", body: "No text found in clipboard")
+        }
     }
     
     @objc private func saveAPIKeyFromDialog() {
