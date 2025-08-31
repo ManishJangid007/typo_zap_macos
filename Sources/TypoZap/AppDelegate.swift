@@ -14,7 +14,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // API Key dialog properties
     private var currentAPIKeyInput: NSTextField?
     private var currentAPIKeyWindow: NSWindow?
-    private var currentAPIKeySemaphore: DispatchSemaphore?
     private var savedAPIKey: String?
     
     // MARK: - App Lifecycle
@@ -329,10 +328,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         cancelButton.font = NSFont.systemFont(ofSize: 13)
         contentView.addSubview(cancelButton)
         
-        // Use a simple approach with instance properties
-        let semaphore = DispatchSemaphore(value: 0)
-        
-        // Set up button actions
+        // Set up button actions using closures for better control
         saveButton.target = self
         saveButton.action = #selector(saveAPIKeyFromDialog)
         
@@ -342,7 +338,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Store references for the actions using instance properties
         self.currentAPIKeyInput = input
         self.currentAPIKeyWindow = window
-        self.currentAPIKeySemaphore = semaphore
         
         // Make input field the first responder and select all text
         DispatchQueue.main.async {
@@ -354,10 +349,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.contentView = contentView
         window.makeKeyAndOrderFront(nil)
         
-        // Wait for user input
-        semaphore.wait()
+        // Use NSApp.runModal instead of semaphore to avoid blocking
+        NSApp.runModal(for: window)
         
-        // Process the result
+        // Process the result after modal is dismissed
         if let apiKey = savedAPIKey, !apiKey.isEmpty {
             geminiService.setAPIKey(apiKey)
             showNotification(title: "API Key Saved", body: "Your Gemini API key has been saved successfully.")
@@ -367,12 +362,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         window.close()
         self.currentAPIKeyInput = nil
         self.currentAPIKeyWindow = nil
-        self.currentAPIKeySemaphore = nil
+        self.savedAPIKey = nil
     }
     
     @objc private func saveAPIKeyFromDialog() {
-        guard let input = currentAPIKeyInput,
-              let semaphore = currentAPIKeySemaphore else {
+        guard let input = currentAPIKeyInput else {
             return
         }
         
@@ -382,14 +376,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self.savedAPIKey = apiKey
         }
         
-        semaphore.signal()
+        // Stop the modal and return control
+        NSApp.stopModal()
     }
     
     @objc private func cancelAPIKeyFromDialog() {
-        guard let semaphore = currentAPIKeySemaphore else {
-            return
-        }
-        
-        semaphore.signal()
+        // Stop the modal and return control
+        NSApp.stopModal()
     }
 }

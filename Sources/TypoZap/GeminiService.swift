@@ -6,7 +6,7 @@ class GeminiService {
     // MARK: - Properties
     private let keychainService = "com.typozap.gemini"
     private let keychainAccount = "api_key"
-    private let baseURL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
+    private let baseURL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
     
     // MARK: - API Key Management
     func hasValidAPIKey() -> Bool {
@@ -64,9 +64,13 @@ class GeminiService {
     // MARK: - Grammar Correction
     func correctGrammar(text: String, completion: @escaping (Result<String, Error>) -> Void) {
         guard let apiKey = getAPIKey() else {
+            print("❌ No API key found")
             completion(.failure(GeminiError.noAPIKey))
             return
         }
+        
+        print("🔑 Using API key: \(String(apiKey.prefix(10)))...")
+        print("📝 Text to correct: \(text)")
         
         // Prepare the request
         let prompt = """
@@ -92,7 +96,7 @@ class GeminiService {
             )
         )
         
-        guard let url = URL(string: "\(baseURL)?key=\(apiKey)") else {
+        guard let url = URL(string: baseURL) else {
             completion(.failure(GeminiError.invalidURL))
             return
         }
@@ -100,10 +104,22 @@ class GeminiService {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiKey, forHTTPHeaderField: "X-goog-api-key")
         
         do {
-            request.httpBody = try JSONEncoder().encode(requestBody)
+            let requestData = try JSONEncoder().encode(requestBody)
+            request.httpBody = requestData
+            
+            // Log the request details
+            print("📤 API Request Details:")
+            print("   - URL: \(url)")
+            print("   - Method: \(request.httpMethod ?? "unknown")")
+            print("   - Headers: \(request.allHTTPHeaderFields ?? [:])")
+            if let requestString = String(data: requestData, encoding: .utf8) {
+                print("   - Request Body: \(requestString)")
+            }
         } catch {
+            print("❌ Failed to encode request: \(error)")
             completion(.failure(error))
             return
         }
@@ -111,13 +127,33 @@ class GeminiService {
         // Make the API call
         URLSession.shared.dataTask(with: request) { data, response, error in
             if let error = error {
+                print("❌ Network error: \(error)")
                 completion(.failure(error))
                 return
             }
             
+            // Log HTTP response details
+            if let httpResponse = response as? HTTPURLResponse {
+                print("📡 HTTP Status: \(httpResponse.statusCode)")
+                print("📡 HTTP Headers: \(httpResponse.allHeaderFields)")
+                
+                // Check for HTTP errors
+                if httpResponse.statusCode != 200 {
+                    print("❌ HTTP Error: \(httpResponse.statusCode)")
+                    completion(.failure(GeminiError.httpError(httpResponse.statusCode)))
+                    return
+                }
+            }
+            
             guard let data = data else {
+                print("❌ No data received from API")
                 completion(.failure(GeminiError.noData))
                 return
+            }
+            
+            // Log the raw response data
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("📥 Raw API Response: \(responseString)")
             }
             
             do {
@@ -125,11 +161,19 @@ class GeminiService {
                 
                 if let text = response.candidates?.first?.content?.parts?.first?.text {
                     let cleanedText = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                    print("✅ Successfully extracted text: \(cleanedText)")
                     completion(.success(cleanedText))
                 } else {
+                    print("❌ Invalid response structure:")
+                    print("   - Candidates: \(response.candidates?.count ?? 0)")
+                    print("   - First candidate content: \(response.candidates?.first?.content != nil)")
+                    print("   - First candidate parts: \(response.candidates?.first?.content?.parts?.count ?? 0)")
+                    print("   - First part text: \(response.candidates?.first?.content?.parts?.first?.text ?? "nil")")
                     completion(.failure(GeminiError.invalidResponse))
                 }
             } catch {
+                print("❌ JSON Decoding error: \(error)")
+                print("❌ Failed to decode response as GeminiResponse")
                 completion(.failure(error))
             }
         }.resume()
@@ -171,6 +215,8 @@ enum GeminiError: LocalizedError {
     case invalidURL
     case noData
     case invalidResponse
+    case httpError(Int)
+    case apiError(String)
     
     var errorDescription: String? {
         switch self {
@@ -181,7 +227,11 @@ enum GeminiError: LocalizedError {
         case .noData:
             return "No data received from API."
         case .invalidResponse:
-            return "Invalid response from API."
+            return "Invalid response structure from API. Check console for details."
+        case .httpError(let statusCode):
+            return "HTTP Error: \(statusCode). Check console for response details."
+        case .apiError(let message):
+            return "API Error: \(message)"
         }
     }
 }
