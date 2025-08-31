@@ -109,9 +109,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let menu = NSMenu()
         
         // Add menu items
-        menu.addItem(NSMenuItem(title: "Change Hotkey", action: #selector(changeHotkey), keyEquivalent: ""))
+        menu.addItem(NSMenuItem(title: "TypoZap is running", action: nil, keyEquivalent: ""))
+        menu.addItem(NSMenuItem.separator())
+        
+        // Show current hotkey so users don't forget
+        menu.addItem(NSMenuItem(title: "Current Hotkey: ⌥+T", action: nil, keyEquivalent: ""))
+        menu.addItem(NSMenuItem.separator())
+        
         menu.addItem(NSMenuItem(title: "Set API Key", action: #selector(setAPIKey), keyEquivalent: ""))
-        menu.addItem(NSMenuItem(title: "Toggle Auto-Correct", action: #selector(toggleAutoCorrect), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q"))
         
@@ -483,18 +488,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     // MARK: - Menu Actions
-    @objc private func changeHotkey() {
-        // TODO: Implement hotkey change dialog
-        showNotification(title: "Coming Soon", body: "Hotkey change feature will be available in a future update.")
-    }
-    
     @objc private func setAPIKey() {
         requestAPIKey()
-    }
-    
-    @objc private func toggleAutoCorrect() {
-        // TODO: Implement auto-correct toggle
-        showNotification(title: "Coming Soon", body: "Auto-correct toggle feature will be available in a future update.")
     }
     
     @objc private func quit() {
