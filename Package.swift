@@ -19,7 +19,10 @@ let package = Package(
         .executableTarget(
             name: "TypoZap",
             dependencies: ["HotKey"],
-            path: "Sources/TypoZap"
+            path: "Sources/TypoZap",
+            resources: [
+                .process("../../tones.json")
+            ]
         )
     ]
 )

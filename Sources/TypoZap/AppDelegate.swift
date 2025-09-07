@@ -16,6 +16,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var currentAPIKeyWindow: NSWindow?
     private var savedAPIKey: String?
     
+    // Tone selection properties
+    private var selectedTone: String = "default"
+    private let toneKey = "selectedTone"
+    
     // MARK: - App Lifecycle
     func applicationDidFinishLaunching(_ notification: Notification) {
         print("🚀 TypoZap launching...")
@@ -25,6 +29,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Initialize services
         geminiService = GeminiService()
         clipboardManager = ClipboardManager()
+        
+        // Load selected tone from UserDefaults
+        selectedTone = UserDefaults.standard.string(forKey: toneKey) ?? "default"
+        print("🎭 Loaded tone: \(selectedTone)")
         
         // Request notification permissions (only if available)
         if #available(macOS 10.14, *) {
@@ -116,6 +124,31 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(NSMenuItem(title: "Current Hotkey: ⌥+T", action: nil, keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
         
+        // Add tone selection submenu
+        let toneMenu = NSMenu()
+        let toneMenuItem = NSMenuItem(title: "Tone: \(selectedTone.capitalized)", action: nil, keyEquivalent: "")
+        
+        // Add tone options
+        let availableTones = geminiService.getAvailableTones()
+        for tone in availableTones {
+            let toneItem = NSMenuItem(title: tone.title.capitalized, action: #selector(selectTone), keyEquivalent: "")
+            toneItem.target = self
+            toneItem.representedObject = tone.title
+            toneItem.state = (tone.title == selectedTone) ? .on : .off
+            toneMenu.addItem(toneItem)
+        }
+        
+        toneMenuItem.submenu = toneMenu
+        menu.addItem(toneMenuItem)
+        
+        // Add tone description
+        if let currentTone = geminiService.getToneByTitle(selectedTone) {
+            let descriptionItem = NSMenuItem(title: currentTone.description, action: nil, keyEquivalent: "")
+            descriptionItem.isEnabled = false
+            menu.addItem(descriptionItem)
+        }
+        
+        menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Set API Key", action: #selector(setAPIKey), keyEquivalent: ""))
         menu.addItem(NSMenuItem.separator())
         menu.addItem(NSMenuItem(title: "Quit", action: #selector(quit), keyEquivalent: "q"))
@@ -273,8 +306,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         showProcessingIndicator()
         
         // Send to Gemini for correction
-        print("🤖 Sending text to Gemini for correction...")
-        geminiService.correctGrammar(text: selectedText) { [weak self] result in
+        print("🤖 Sending text to Gemini for correction with tone: \(selectedTone)...")
+        geminiService.correctGrammar(text: selectedText, tone: selectedTone) { [weak self] result in
             DispatchQueue.main.async {
                 self?.hideProcessingIndicator()
                 
@@ -490,6 +523,22 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Menu Actions
     @objc private func setAPIKey() {
         requestAPIKey()
+    }
+    
+    @objc private func selectTone(_ sender: NSMenuItem) {
+        guard let toneTitle = sender.representedObject as? String else { return }
+        
+        selectedTone = toneTitle
+        UserDefaults.standard.set(toneTitle, forKey: toneKey)
+        print("🎭 Selected tone: \(toneTitle)")
+        
+        // Update menu to reflect new selection
+        setupMenuBar()
+        
+        // Show notification
+        if let tone = geminiService.getToneByTitle(toneTitle) {
+            showNotification(title: "Tone Changed", body: "Now using \(toneTitle.capitalized) tone: \(tone.description)")
+        }
     }
     
     @objc private func quit() {

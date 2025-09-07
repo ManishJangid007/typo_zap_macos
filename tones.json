@@ -1,0 +1,29 @@
+{
+    "tones": [
+        {
+            "title": "default",
+            "description": "Corrects grammar, spelling, and punctuation without changing the tone or meaning of the text.",
+            "prompt": "Please correct the grammar, spelling, and punctuation in the following text. Return only the corrected text without any explanations or additional formatting:\n{text}"
+        },
+        {
+            "title": "polite",
+            "description": "Rewrites the text in a polite and professional tone while preserving context.",
+            "prompt": "Please provide a polite, concise version of the following text, ensuring grammar and punctuation are corrected. Wrap any possible confidential information in [ ] for review if there is no confidential information then do not put [ ] in the text. Include all relevant information so the context is preserved. Return only the revised text without explanations or additional formatting:\n{text}"
+        },
+        {
+            "title": "aggressive",
+            "description": "Rewrites the text with a confident, no-nonsense, assertive tone while staying clear and direct.",
+            "prompt": "Rewrite the following text with a direct and assertive tone. Ensure grammar and spelling are correct, and keep the message clear and impactful. Do not add explanations or extra words — return only the rewritten text:\n{text}"
+        },
+        {
+            "title": "sarcastic",
+            "description": "Rewrites the text with dry humor and sarcasm while keeping it readable and grammatically correct.",
+            "prompt": "Rewrite the following text with a sarcastic tone, using subtle humor while keeping grammar and spelling correct. Keep it clever but understandable. Return only the rewritten text without explanations or extra commentary:\n{text}"
+        },
+        {
+            "title": "funny",
+            "description": "Adds a light, playful, and witty tone while correcting grammar and spelling.",
+            "prompt": "Rewrite the following text in a playful and humorous way, adding light jokes or clever wording while keeping the meaning intact. Ensure grammar and spelling are correct. Return only the rewritten text without explanations or additional formatting:\n{text}"
+        }
+    ]
+}

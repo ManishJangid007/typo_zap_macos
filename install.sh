@@ -71,6 +71,14 @@ if [ $? -eq 0 ]; then
         echo "⚠️  completed.icns not found"
     fi
     
+    # Copy tones.json
+    if [ -f "tones.json" ]; then
+        cp tones.json "$APP_BUNDLE/Contents/Resources/"
+        echo "✅ tones.json copied to app bundle"
+    else
+        echo "⚠️  tones.json not found"
+    fi
+    
     # Create Info.plist
     cat > "$APP_BUNDLE/Contents/Info.plist" << EOF
 <?xml version="1.0" encoding="UTF-8"?>

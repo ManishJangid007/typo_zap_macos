@@ -7,6 +7,13 @@ class GeminiService {
     private let keychainService = "com.typozap.gemini"
     private let keychainAccount = "api_key"
     private let baseURL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+    private let tonesData: [ToneData]
+    
+    // MARK: - Initialization
+    init() {
+        // Load tones from tones.json
+        self.tonesData = GeminiService.loadTonesFromBundle()
+    }
     
     // MARK: - API Key Management
     func hasValidAPIKey() -> Bool {
@@ -61,8 +68,34 @@ class GeminiService {
         return nil
     }
     
+    // MARK: - Tone Management
+    func getAvailableTones() -> [ToneData] {
+        return tonesData
+    }
+    
+    func getToneByTitle(_ title: String) -> ToneData? {
+        return tonesData.first { $0.title == title }
+    }
+    
+    private static func loadTonesFromBundle() -> [ToneData] {
+        guard let path = Bundle.main.path(forResource: "tones", ofType: "json"),
+              let data = NSData(contentsOfFile: path),
+              let json = try? JSONSerialization.jsonObject(with: data as Data) as? [String: Any],
+              let tonesArray = json["tones"] as? [[String: String]] else {
+            print("⚠️ Could not load tones.json, using default tone")
+            return [ToneData(title: "default", description: "Corrects grammar, spelling, and punctuation without changing the tone or meaning of the text.", prompt: "Please correct the grammar, spelling, and punctuation in the following text. Return only the corrected text without any explanations or additional formatting:\n{text}")]
+        }
+        
+        return tonesArray.compactMap { toneDict in
+            guard let title = toneDict["title"],
+                  let description = toneDict["description"],
+                  let prompt = toneDict["prompt"] else { return nil }
+            return ToneData(title: title, description: description, prompt: prompt)
+        }
+    }
+    
     // MARK: - Grammar Correction
-    func correctGrammar(text: String, completion: @escaping (Result<String, Error>) -> Void) {
+    func correctGrammar(text: String, tone: String = "default", completion: @escaping (Result<String, Error>) -> Void) {
         guard let apiKey = getAPIKey() else {
             print("❌ No API key found")
             completion(.failure(GeminiError.noAPIKey))
@@ -71,14 +104,13 @@ class GeminiService {
         
         print("🔑 Using API key: \(String(apiKey.prefix(10)))...")
         print("📝 Text to correct: \(text)")
+        print("🎭 Using tone: \(tone)")
         
-        // Prepare the request
-        let prompt = """
-        Please correct the grammar, spelling, and punctuation in the following text. 
-        Return only the corrected text without any explanations or additional formatting:
+        // Get the tone-specific prompt
+        let toneData = getToneByTitle(tone) ?? tonesData.first!
+        let prompt = toneData.prompt.replacingOccurrences(of: "{text}", with: text)
         
-        \(text)
-        """
+        print("📝 Using prompt: \(prompt)")
         
         let requestBody = GeminiRequest(
             contents: [
@@ -207,6 +239,13 @@ struct GeminiResponse: Codable {
 
 struct GeminiCandidate: Codable {
     let content: GeminiContent?
+}
+
+// MARK: - Tone Data Structure
+struct ToneData {
+    let title: String
+    let description: String
+    let prompt: String
 }
 
 // MARK: - Errors
