@@ -8,7 +8,7 @@
         {
             "title": "polite",
             "description": "Rewrites the text in a polite and professional tone while preserving context.",
-            "prompt": "Please provide a polite, concise version of the following text, ensuring grammar and punctuation are corrected. Wrap any possible confidential information in [ ] for review. Include all relevant information so the context is preserved. Return only the revised text without explanations or additional formatting:\n{text}"
+            "prompt": "Please provide a polite, concise version of the following text, ensuring grammar and punctuation are corrected. Wrap any possible confidential information in [ ] for review if there is no confidential information then do not put [ ] in the text. Include all relevant information so the context is preserved. Return only the revised text without explanations or additional formatting:\n{text}"
         },
         {
             "title": "aggressive",
