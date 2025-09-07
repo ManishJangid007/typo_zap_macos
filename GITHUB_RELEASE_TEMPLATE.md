@@ -20,6 +20,25 @@ This release introduces **tone selection** - choose from 5 different writing sty
 5. Grant accessibility permissions when prompted
 6. Enter your Gemini API key
 
+## 🚨 Important - "App is Damaged" Error
+
+If you see **"TypoZap.app is damaged and can't be opened"**:
+
+### Quick Fix:
+1. **Right-click** on `TypoZap.app` in Applications folder
+2. Select **"Open"** from the context menu
+3. Click **"Open"** in the security dialog
+4. App will launch normally!
+
+### Why This Happens:
+- macOS Gatekeeper blocks unsigned apps for security
+- TypoZap is completely safe - just not code-signed
+- This is normal for open-source applications
+
+### Alternative Methods:
+- **System Preferences**: Security & Privacy → General → "Open Anyway"
+- **Terminal**: `sudo xattr -rd com.apple.quarantine /Applications/TypoZap.app`
+
 ## 🎭 Available Tones
 
 | Tone | Description | Best For |

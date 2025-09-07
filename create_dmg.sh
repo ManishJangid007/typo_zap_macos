@@ -100,6 +100,12 @@ echo "📱 Installing TypoZap to Applications folder..."
 if cp -R "$SOURCE_APP" "$DEST_APP"; then
     echo "✅ TypoZap installed successfully!"
     echo ""
+    echo "🚨 IMPORTANT - If you see 'App is Damaged' error:"
+    echo "1. Right-click TypoZap.app in Applications folder"
+    echo "2. Select 'Open' from the context menu"
+    echo "3. Click 'Open' in the security dialog"
+    echo "4. This is normal for unsigned apps - TypoZap is safe!"
+    echo ""
     echo "🎯 Next Steps:"
     echo "1. Open TypoZap from your Applications folder"
     echo "2. Grant accessibility permissions when prompted"
@@ -112,6 +118,7 @@ if cp -R "$SOURCE_APP" "$DEST_APP"; then
     echo "• Right-click menu bar icon to change tone"
     echo ""
     echo "📚 For detailed instructions, see README.txt"
+    echo "🔧 For troubleshooting, see TROUBLESHOOTING.txt"
     echo ""
     
     # Ask if user wants to launch the app
@@ -156,6 +163,12 @@ INSTALLATION:
 3. Grant accessibility permissions when prompted
 4. Enter your Gemini API key
 
+🚨 IMPORTANT - "App is Damaged" Error:
+If you see "TypoZap.app is damaged and can't be opened":
+1. Right-click TypoZap.app → Select "Open"
+2. Click "Open" in the security dialog
+3. This is normal for unsigned apps - TypoZap is completely safe!
+
 USAGE:
 1. Select text in any application
 2. Press ⌥+T (Option+T) to correct
@@ -176,12 +189,57 @@ TROUBLESHOOTING:
 - If installation fails, try running with: sudo ./Install\ TypoZap.command
 - Make sure to grant accessibility permissions in System Preferences
 - Check that your Gemini API key is valid
+- See TROUBLESHOOTING.txt for detailed help
 
 SUPPORT:
-- GitHub: https://github.com/yourusername/typo_zap
+- GitHub: https://github.com/ManishJangid007/typo_zap_macos
 - Issues: Please report bugs on GitHub
 
 Made with ❤️ for macOS users who want perfect grammar!
+EOF
+
+# Create troubleshooting guide
+print_status "Creating troubleshooting guide..."
+cat > "$DMG_DIR/TROUBLESHOOTING.txt" << 'EOF'
+TypoZap Installation Troubleshooting
+====================================
+
+🚨 "App is Damaged" Error - SOLVED!
+
+If you see "TypoZap.app is damaged and can't be opened":
+
+METHOD 1 (Easiest):
+1. Right-click on TypoZap.app in Finder
+2. Select "Open" from the context menu
+3. Click "Open" in the security dialog
+4. App will launch normally!
+
+METHOD 2 (System Preferences):
+1. Go to System Preferences → Security & Privacy
+2. Click "General" tab
+3. Look for TypoZap blocked message
+4. Click "Open Anyway"
+5. Click "Open" when prompted
+
+METHOD 3 (Terminal):
+Open Terminal and run:
+sudo xattr -rd com.apple.quarantine /Applications/TypoZap.app
+
+WHY THIS HAPPENS:
+- macOS Gatekeeper blocks unsigned apps for security
+- TypoZap is completely safe - just not code-signed
+- This is normal for open-source apps
+
+AFTER BYPASSING GATEKEEPER:
+1. Grant accessibility permissions when prompted
+2. Enter your Gemini API key
+3. Start using with ⌥+T hotkey!
+
+SECURITY NOTE:
+TypoZap is open-source, privacy-focused, and completely safe.
+macOS is just being extra cautious!
+
+Need more help? Check GitHub Issues!
 EOF
 
 # Create a symlink to Applications folder for easy drag-and-drop
